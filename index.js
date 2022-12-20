@@ -4,35 +4,42 @@ const files = require('./lib/files')
 const logger = require('./lib/logger')
 
 const run = async () => {
+    const args = process.argv
+        .slice(2)
+        .map(arg => arg.split('='))
+        .reduce((args, [value, key]) => {
+            args[value] = key;
+            return args;
+        }, {});
 
     logger.openingMessage()
 
-    const actionRes = await inquirer.requestAction() // export
+    const action = args.type || (await inquirer.requestAction()).action // export
 
-    const inputPathRes = await inquirer.requestInputPath() // js files
+    const inputPath = args.input || (await inquirer.requestInputPath()).inputPath // js files
 
-    const outputPathRes = await inquirer.requestOutputPath() // csv
+    const outputPath = args.output || await inquirer.requestOutputPath().outputPath // csv
 
-    if (!files.directoryExists(inputPathRes.inputPath)) {
+    if (!files.directoryExists(inputPath)) {
         logger.errorMessage('Error: input path inserted does not exist.')
         return
     }
 
-    if (!files.directoryExists(outputPathRes.outputPath)) {
+    if (!files.directoryExists(outputPath)) {
         logger.errorMessage('Error: output path inserted does not exist.')
         return
     }
 
 
-    if (actionRes.action === 'export') {
-        const output = formatters.jsFormatter.fromJs(inputPathRes.inputPath)
-        const langs = formatters.jsFormatter.getLangs(inputPathRes.inputPath)
-        formatters.csvFormatter.toCsv(output, outputPathRes.outputPath, langs)
+    if (action === 'export') {
+        const output = formatters.jsFormatter.fromJs(inputPath)
+        const langs = formatters.jsFormatter.getLangs(inputPath)
+        formatters.csvFormatter.toCsv(output, outputPath, langs)
     }
 
-    if (actionRes.action === 'import') {
-        const output = formatters.csvFormatter.fromCsv(inputPathRes.inputPath)
-        formatters.jsFormatter.toJs(output, outputPathRes.outputPath)
+    if (action === 'import') {
+        const output = formatters.csvFormatter.fromCsv(inputPath)
+        formatters.jsFormatter.toJs(output, outputPath)
     }
 }
 
